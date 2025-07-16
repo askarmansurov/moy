@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Кабинет мастера — Вход и регистрация (Local)</title>
+  <style>
+    body { font-family: Verdana, sans-serif; padding: 20px; max-width: 500px; margin: auto; }
+    h1, h2 { text-align: center; }
+    form { border: 1px solid #ccc; padding: 15px; margin: 20px 0; border-radius: 8px; }
+    input { display: block; width: 100%; margin-bottom: 12px; padding: 10px; font-size: 16px; }
+    button { padding: 10px 20px; cursor: pointer; font-size: 16px; }
+    .msg { margin-top: 10px; text-align: center; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<h1>Кабинет мастера</h1>
+
+<h2>Регистрация</h2>
+<form id="registerForm">
+  <input type="text" placeholder="Имя" required>
+  <input type="tel" placeholder="Телефон +7" required>
+  <input type="email" placeholder="Email" required>
+  <input type="password" placeholder="Пароль" required>
+  <button type="submit">Зарегистрироваться</button>
+  <div class="msg" id="regMsg"></div>
+</form>
+
+<h2>Вход</h2>
+<form id="loginForm">
+  <input type="email" placeholder="Email" required>
+  <input type="password" placeholder="Пароль" required>
+  <button type="submit">Войти</button>
+  <div class="msg" id="loginMsg"></div>
+</form>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const regForm = document.getElementById("registerForm");
+  const loginForm = document.getElementById("loginForm");
+  const regMsg = document.getElementById("regMsg");
+  const loginMsg = document.getElementById("loginMsg");
+
+  regForm.addEventListener("submit", e => {
+    e.preventDefault();
+    const inputs = regForm.querySelectorAll("input");
+    const name = inputs[0].value.trim();
+    const phone = inputs[1].value.trim();
+    const email = inputs[2].value.trim();
+    const password = inputs[3].value.trim();
+
+    let siteData = JSON.parse(localStorage.getItem('siteData')) || {
+      masters: [],
+      current_master_id: null,
+      requests: []
+    };
+
+    if (siteData.masters.find(m => m.email === email)) {
+      regMsg.textContent = "Мастер с таким email уже зарегистрирован.";
+      regMsg.style.color = "red";
+      return;
+    }
+
+    const newMaster = {
+      id: Date.now(),
+      name,
+      phone,
+      email,
+      password,
+      balance: 1000,
+      history: []
+    };
+
+    siteData.masters.push(newMaster);
+    localStorage.setItem('siteData', JSON.stringify(siteData));
+
+    regMsg.textContent = "Регистрация успешна!";
+    regMsg.style.color = "green";
+    regForm.reset();
+  });
+
+  loginForm.addEventListener("submit", e => {
+    e.preventDefault();
+    const inputs = loginForm.querySelectorAll("input");
+    const email = inputs[0].value.trim();
+    const password = inputs[1].value.trim();
+
+    let siteData = JSON.parse(localStorage.getItem('siteData')) || {
+      masters: [],
+      current_master_id: null,
+      requests: []
+    };
+
+    const master = siteData.masters.find(m => m.email === email && m.password === password);
+
+    if (!master) {
+      loginMsg.textContent = "Неверный email или пароль.";
+      loginMsg.style.color = "red";
+      return;
+    }
+
+    siteData.current_master_id = master.id;
+    localStorage.setItem('siteData', JSON.stringify(siteData));
+
+    loginMsg.textContent = "Вход успешен!";
+    loginMsg.style.color = "green";
+    loginForm.reset();
+  });
+});
+</script>
+
+</body>
+</html>
+

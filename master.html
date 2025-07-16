@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Кабинет мастера (Local)</title>
+  <style>
+    body { font-family: Verdana, sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+    h1, h2 { text-align: center; }
+    .balance { text-align: center; font-size: 22px; margin-top: 20px; }
+    button { display: block; margin: 10px auto; padding: 10px 20px; cursor: pointer; }
+    .history, .subs { margin-top: 30px; }
+    .history-item { border: 1px solid #ccc; padding: 10px; border-radius: 8px; margin: 10px 0; }
+    .msg { text-align: center; margin-top: 15px; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<h1>Кабинет мастера</h1>
+<div class="msg" id="info"></div>
+<div class="balance" id="balance"></div>
+
+<button onclick="topUp()">Пополнить баланс (демо)</button>
+<button onclick="logoutMaster()">Выйти из кабинета мастера</button>
+
+<div class="subs">
+  <h2>Подписки на категории</h2>
+  <div id="subscriptions"></div>
+</div>
+
+<div class="history">
+  <h2>История откликов</h2>
+  <div id="historyList"></div>
+</div>
+
+<script>
+const categories = ["Электрика", "Сантехника", "Сварка", "Отделка"];
+
+document.addEventListener("DOMContentLoaded", () => {
+  let siteData = JSON.parse(localStorage.getItem('siteData')) || {
+    masters: [],
+    current_master_id: null,
+    requests: [],
+    myRequestIds: [],
+    paidSubscriptions: {},
+    singlePayments: []
+  };
+
+  const info = document.getElementById('info');
+  const balanceEl = document.getElementById('balance');
+  const historyList = document.getElementById('historyList');
+  const subsDiv = document.getElementById('subscriptions');
+
+  if (!siteData.current_master_id) {
+    info.innerHTML = "<p style='color:red'>Вы не вошли. Пожалуйста <a href='master-login.html'>авторизуйтесь</a>.</p>";
+    return;
+  }
+
+  const master = siteData.masters.find(m => m.id === siteData.current_master_id);
+  if (!master) {
+    info.innerHTML = "<p style='color:red'>Мастер не найден. Перезайдите.</p>";
+    return;
+  }
+
+  // Инициализируем subscriptions если пусто
+  if (!master.subscriptions) {
+    master.subscriptions = {};
+    categories.forEach(cat => master.subscriptions[cat] = null);
+  }
+
+  info.innerHTML = `<h2>Привет, ${master.name}!</h2>`;
+  balanceEl.textContent = `Ваш баланс: ${master.balance} ₸`;
+
+  // Подписки
+  categories.forEach(cat => {
+    let exp = master.subscriptions[cat];
+    let valid = exp && new Date(exp) > new Date();
+    let subLine = valid
+      ? `<p>${cat}: <strong>до ${new Date(exp).toLocaleDateString()}</strong></p>`
+      : `<p>${cat}: Нет подписки 
+          <button onclick="paySubscription('${cat}')">Оплатить 700 ₸ за месяц</button>
+         </p>`;
+    subsDiv.innerHTML += subLine;
+  });
+
+  // История
+  if (master.history.length > 0) {
+    master.history.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'history-item';
+      div.innerHTML = `
+        <strong>${item.category}, ${item.city}</strong><br>
+        ${item.description}<br>
+        <small>${item.responded_at}</small>
+      `;
+      historyList.appendChild(div);
+    });
+  } else {
+    historyList.innerHTML = "<p>Пока нет откликов.</p>";
+  }
+
+  localStorage.setItem('siteData', JSON.stringify(siteData));
+});
+
+function topUp() {
+  let siteData = JSON.parse(localStorage.getItem('siteData'));
+  const master = siteData.masters.find(m => m.id === siteData.current_master_id);
+  master.balance += 1000;
+  localStorage.setItem('siteData', JSON.stringify(siteData));
+  alert("Баланс пополнен на 1000 ₸.");
+  location.reload();
+}
+
+function logoutMaster() {
+  let siteData = JSON.parse(localStorage.getItem('siteData'));
+  siteData.current_master_id = null;
+  localStorage.setItem('siteData', JSON.stringify(siteData));
+  alert("Вы вышли из кабинета мастера.");
+  location.reload();
+}
+
+function paySubscription(category) {
+  let siteData = JSON.parse(localStorage.getItem('siteData'));
+  const master = siteData.masters.find(m => m.id === siteData.current_master_id);
+
+  if (master.balance < 700) {
+    alert("Недостаточно средств для оплаты подписки.");
+    return;
+  }
+
+  master.balance -= 700;
+
+  // Подписка на 30 дней
+  const date = new Date();
+  date.setDate(date.getDate() + 30);
+  master.subscriptions[category] = date.toISOString();
+
+  localStorage.setItem('siteData', JSON.stringify(siteData));
+  alert(`Оплачено 700 ₸ за подписку по ${category} до ${date.toLocaleDateString()}`);
+  location.reload();
+}
+</script>
+
+</body>
+</html>
+

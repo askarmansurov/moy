@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Каталог — Мой магазин</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <nav class="nav">
+      <a href="index.html">Главная</a>
+      <a href="catalog.html">Каталог</a>
+      <a href="about.html">О нас</a>
+      <a href="contacts.html">Контакты</a>
+      <a href="cart.html" class="cart-link">🛒 (<span id="cart-count">0</span>)</a>
+      <button onclick="toggleTheme()">День/Ночь</button>
+    </nav>
+  </header>
+
+  <main>
+    <h1>Каталог товаров</h1>
+
+    <div class="controls">
+      <input type="text" id="search" placeholder="Поиск...">
+      <button onclick="startVoiceSearch()">🎤</button>
+
+      <select id="category">
+        <option value="">Все категории</option>
+        <option value="Компьютеры">Компьютеры</option>
+        <option value="Комплектующие">Комплектующие</option>
+        <option value="Периферия">Периферия</option>
+      </select>
+
+      <select id="sort">
+        <option value="">Без сортировки</option>
+        <option value="price-asc">Цена ↑</option>
+        <option value="price-desc">Цена ↓</option>
+      </select>
+    </div>
+
+    <div class="products">
+      <div class="product" data-category="Компьютеры" data-price="300000" onclick="location.href='product-computer.html'">
+        <h3>Компьютер</h3>
+        <p>300,000₸</p>
+      </div>
+      <div class="product" data-category="Комплектующие" data-price="150000" onclick="location.href='product-videocard.html'">
+        <h3>Видеокарта</h3>
+        <p>150,000₸</p>
+      </div>
+      <div class="product" data-category="Периферия" data-price="5000" onclick="location.href='product-flash.html'">
+        <h3>Флешка</h3>
+        <p>5,000₸</p>
+      </div>
+      <div class="product" data-category="Комплектующие" data-price="100000" onclick="location.href='product-processor.html'">
+        <h3>Процессор</h3>
+        <p>100,000₸</p>
+      </div>
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

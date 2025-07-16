@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Заявки (Local)</title>
+  <style>
+    body { font-family: Verdana, sans-serif; padding: 20px; max-width: 900px; margin: auto; }
+    h1 { text-align: center; }
+    .product { border: 1px solid #ccc; border-radius: 8px; padding: 15px; margin: 15px 0; }
+    .product h3 { margin: 0 0 10px; }
+    button { margin-top: 8px; padding: 8px 14px; cursor: pointer; }
+    .msg { text-align: center; margin-top: 20px; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<h1>Все заявки</h1>
+<div class="msg" id="info"></div>
+<div id="products"></div>
+
+<script>
+const categories = ["Электрика", "Сантехника", "Сварка", "Отделка"];
+
+document.addEventListener("DOMContentLoaded", () => {
+  let siteData = JSON.parse(localStorage.getItem('siteData')) || {
+    masters: [],
+    current_master_id: null,
+    requests: [],
+    myRequestIds: [],
+    paidSubscriptions: {},
+    singlePayments: []
+  };
+
+  const container = document.getElementById('products');
+  const info = document.getElementById('info');
+
+  let master = null;
+  if (siteData.current_master_id) {
+    master = siteData.masters.find(m => m.id === siteData.current_master_id);
+    if (master) {
+      info.innerHTML = `<p>Вы вошли как мастер: <strong>${master.name}</strong></p>`;
+      if (!master.subscriptions) {
+        master.subscriptions = {};
+        categories.forEach(cat => master.subscriptions[cat] = null);
+      }
+      if (!siteData.singlePayments) {
+        siteData.singlePayments = [];
+      }
+    }
+  }
+
+  if (siteData.requests.length === 0) {
+    container.innerHTML = "<p class='msg'>Пока нет заявок.</p>";
+    return;
+  }
+
+  siteData.requests.forEach(req => {
+    let div = document.createElement('div');
+    div.className = 'product';
+
+    let phoneLine = "<p><strong>Телефон:</strong> скрыт</p>";
+
+    // для защиты: если мастер сам оставил эту заявку (по owner_master_id)
+    let isOwner = master && req.owner_master_id === master.id;
+
+    if (master) {
+      const exp = master.subscriptions[req.category];
+      const hasCategorySub = exp && new Date(exp) > new Date();
+      const hasSinglePay = siteData.singlePayments.includes(req.id);
+
+      if (isOwner) {
+        phoneLine = `<p><strong>Телефон:</strong> ${req.phone} <em>(ваша собственная заявка)</em></p>`;
+      } else if (hasCategorySub || hasSinglePay) {
+        phoneLine = `<p><strong>Телефон:</strong> ${req.phone}</p>`;
+      } else {
+        phoneLine = `
+          <p><strong>Телефон:</strong> скрыт</p>
+          <button onclick="paySingle(${req.id}, '${req.category}')">Открыть телефон за 200 ₸</button>
+        `;
+      }
+    }
+
+    div.innerHTML = `
+      <h3>${req.category}, ${req.city}</h3>
+      <p>${req.description}</p>
+      ${phoneLine}
+    `;
+
+    container.appendChild(div);
+  });
+
+  localStorage.setItem('siteData', JSON.stringify(siteData));
+});
+
+function paySingle(requestId, category) {
+  let siteData = JSON.parse(localStorage.getItem('siteData'));
+  const master = siteData.masters.find(m => m.id === siteData.current_master_id);
+  const request = siteData.requests.find(r => r.id === requestId);
+
+  if (!master) {
+    alert("Вы не вошли как мастер.");
+    return;
+  }
+
+  // проверка — не покупает ли мастер свою заявку
+  if (request.owner_master_id === master.id) {
+    alert("Это ваша собственная заявка, телефон вам и так известен.");
+    return;
+  }
+
+  if (master.balance < 200) {
+    alert("Недостаточно средств для оплаты этой заявки.");
+    return;
+  }
+
+  master.balance -= 200;
+  if (!siteData.singlePayments.includes(requestId)) {
+    siteData.singlePayments.push(requestId);
+  }
+
+  localStorage.setItem('siteData', JSON.stringify(siteData));
+  alert(`Оплачено 200 ₸. Теперь телефон в этой заявке открыт.`);
+  location.reload();
+}
+</script>
+
+</body>
+</html>
